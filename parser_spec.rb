@@ -58,14 +58,21 @@ describe Parser do
 
     it "parses multiple tags inside a tag" do
       token_list = [
-        :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012-02-02", :quote, :rbracket,
-           :lbracket, "nestedtag", :rbracket, "nestedtagtext", :lbracket, :slash, "nestedtag", :rbracket,
-           :lbracket, "nestedtag", :rbracket, "second nested tag text", :lbracket, :slash, "nestedtag", :rbracket,
-         :lbracket, :slash, "book", :rbracket]
+      :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012-02-02", :quote, :rbracket,
+        :lbracket, "nestedtag", :rbracket, "nestedtagtext", :lbracket, :slash, "nestedtag", :rbracket,
+        :lbracket, "nestedtag", :rbracket, "second nested tag text", :lbracket, :slash, "nestedtag", :rbracket,
+      :lbracket, :slash, "book", :rbracket]
+
       p=Parser.new(token_list)
       t=p.node
-      t.to_s.should == '<book id="bk101" date="2012-02-02"><nestedtag>nestedtagtext</nestedtag><nestedtag>second nested tag text</nestedtag></book>'
-      p.parse
+      str = <<-END
+<book id="bk101" date="2012-02-02">
+  <nestedtag>nestedtagtext</nestedtag>
+  <nestedtag>second nested tag text</nestedtag>
+</book>
+      END
+      str.gsub!(/\n\s*/,'')
+      t.to_s.should == str
     end
 
     it "should parse sample token input correctly" do
@@ -81,8 +88,21 @@ describe Parser do
             :lbracket, :slash, "book", :rbracket,
           :lbracket, :slash, "catalog", :rbracket]
       p=Parser.new(token_list)
-      t=p.node
-      t.to_s.should == '<catalog><book id="bk101"><author>Gambardella, Matthew</author><title>XML Developer\'s Guide</title><genre>Computer</genre><price>44.95</price><publish_date>2000-10-01</publish_date><description>An in-depth look at creating applications with XML.</description></book></catalog>'
+      t=p.parse
+      str = <<-END
+<catalog>
+  <book id="bk101">
+    <author>Gambardella, Matthew</author>
+    <title>XML Developer's Guide</title>
+    <genre>Computer</genre>
+    <price>44.95</price>
+    <publish_date>2000-10-01</publish_date>
+    <description>An in-depth look at creating applications with XML.</description>
+  </book>
+</catalog>
+      END
+      str.gsub!(/\n\s*/,'')
+      t.to_s.should == str
     end
 
     # it "constructs a tree out of nested tags" do

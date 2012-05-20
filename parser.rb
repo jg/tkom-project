@@ -16,7 +16,7 @@ class Node
 
   def initialize(hash)
     @name      = hash[:name]
-    @arguments = hash[:arguments]
+    @arguments = hash[:arguments] if hash[:arguments]
     @children = hash[:children].flatten if !hash[:children].nil?
   end
 
@@ -162,9 +162,9 @@ class Parser
       rest = argument_list
       # drop last element
       if rest.nil?  
-        return [arg]
+        [arg]
       else
-        return [arg] << rest
+        [arg, rest].flatten
       end
     end
   end
