@@ -106,10 +106,67 @@ describe Parser do
     end
 
     # it "constructs a tree out of nested tags" do
-    #   token_list = [:lbracket, "book", :rbracket, :lbracket, "tag", :rbracket, "tagtext",:lbracket, :]
+    #   token_list = [
+    #       :lbracket, "catalog", :rbracket, 
+    #         :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
+    #           :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
+    #           :lbracket, "title", :rbracket,
+    #             :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
+    #           :lbracket, :slash, "title", :rbracket,
+    #           :lbracket, "genre", :rbracket, "Computer", :lbracket, :slash, "genre", :rbracket,
+    #           :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
+    #           :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
+    #           :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
+    #         :lbracket, :slash, "book", :rbracket,
+    #       :lbracket, :slash, "catalog", :rbracket]
     #   p=Parser.new(token_list)
-    #   t=p.tag_start
-    #   t.should == {:name=>"book", :arguments=>[{:name=>"id", :value=>"bk101"}, {:name=>"date", :value=>"2012-02-02"}]}
+    #   t=p.parse
+      # debugger
+      # it = t.inorder_iterator(t, 0)
+      # it.call Proc.new {|node, depth|
+      #   if node.name != nil
+      #     warn "\t"*depth + "#{node.name}" 
+      #   end
+      # }
+      # t.inorder(t,0) {|node,depth|
+        # if node.name != nil
+        #   warn "\t"*depth + "#{node.name}" 
+      # }
+
+      # Node.node_set(t).each_with_index do |el, index|
+      #   warn "#{index}: #{el}"
+      # end
     # end
+
+    it "diffs the trees" do
+      token_list1 = [
+          :lbracket, "catalog", :rbracket, 
+            :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
+              :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
+              :lbracket, "title", :rbracket,
+                :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
+              :lbracket, :slash, "title", :rbracket,
+              :lbracket, "genre", :rbracket, "Computer", :lbracket, :slash, "genre", :rbracket,
+              :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
+              :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
+              :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
+            :lbracket, :slash, "book", :rbracket,
+          :lbracket, :slash, "catalog", :rbracket]
+      token_list2 = [
+          :lbracket, "catalog", :rbracket, 
+            :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
+              :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
+              :lbracket, "title", :rbracket,
+                :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
+              :lbracket, :slash, "title", :rbracket,
+              :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
+              :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
+              :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
+            :lbracket, :slash, "book", :rbracket,
+          :lbracket, :slash, "catalog", :rbracket]
+      t1=Parser.new(token_list1).parse
+      t2=Parser.new(token_list2).parse
+      t1.diff(t2)
+    end
   end
 end

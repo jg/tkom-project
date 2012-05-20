@@ -1,4 +1,5 @@
 require 'ruby-debug'
+require 'set'
 
 ## GRAMATYKA:
 
@@ -12,13 +13,59 @@ require 'ruby-debug'
 # <argument>      ::= <text> '=' <text>
 
 class Node
-  attr_accessor :children, :parent, :name
+  attr_accessor :children, :parent, :name, :arguments
 
   def initialize(hash)
     @name      = hash[:name]
-    @arguments = hash[:arguments] if hash[:arguments]
+    @arguments = hash[:arguments]
     @children = hash[:children].flatten if !hash[:children].nil?
   end
+
+  ##
+  # Arguments are root node and function callback
+  # callback is called for each node reachable from root node
+  # tree is traversed inorder
+  # def inorder(node, depth)
+  #   yield(node, depth)
+  #   node.children.map do |el|
+  #     inorder(el, depth+1)
+  #   end
+  # end
+  def self.inorder(node, callback, depth)
+    callback.call(node, depth)
+    node.children.map do |el|
+      inorder(el, callback, depth+1) unless node.name == "Text"
+    end
+  end
+
+  def self.node_set(node)
+    collection = []
+
+    # callback for inorder HOF
+    f = lambda { |node, depth|
+      collection[depth] = [] if collection[depth].nil?
+
+      # text node
+      if node.name == "Text"
+        collection[depth] << ["#{node.name}", node.children.first]
+      # node with arguments
+      elsif !node.arguments.nil?
+        args = node.arguments.map {|h|
+          "#{h[:name]}=#{h[:value]}"
+        }.sort
+        collection[depth] << ["#{node.name} #{args.join(' ')}"]
+      else
+        collection[depth] << [node.name]
+      end
+    }
+
+    # collect nodes from tree
+    Node.inorder(node,f,0)
+
+    # sort each level of tree
+    collection.map {|level| level.sort }
+  end
+
 
   def to_s
     # text node
@@ -38,6 +85,51 @@ class Node
         "<#{@name}>#{children_str}</#{@name}>"
       end
     end
+  end
+
+  ##
+  # Returns a list of nodes which are present in self but not in tree
+  def diff(node)
+    ns1 = Node.node_set(self)
+    ns2 = Node.node_set(node)
+
+    if ns1.length != ns2.length
+      warn 'Tree depths do not match'
+      return
+    end
+
+    warn "\n"
+    warn 'tree2-tree1:'
+    0.upto(ns1.length-1) do |level|
+      ns1[level].each_with_index do |element, i|
+        if ns2[level].find_index(element).nil?
+          # warn "Element #{element} found at #{level}/#{i}"
+          warn "\t#{element} not in tree2 (level #{level})"
+        end
+      end
+    end
+    warn '-'*78
+    warn 'tree1-tree2'
+    0.upto(ns1.length-1) do |level|
+      ns2[level].each_with_index do |element, i|
+        if ns1[level].find_index(element).nil?
+          warn "\t #{element} not in tree1 (level #{level})"
+        end
+      end
+    end
+    warn '-'*78
+    warn 'in tree1 and tree2:'
+    0.upto(ns1.length-1) do |level|
+      ns2[level].each_with_index do |element, i|
+        if !ns1[level].find_index(element).nil?
+          warn "\t #{element} (level: #{level})"
+        end
+      end
+    end
+  end
+
+  def ==(other)
+    @name == other.name && Set.new(@arguments) == Set.new(other.arguments)
   end
 end
 
