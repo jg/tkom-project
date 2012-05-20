@@ -11,11 +11,13 @@ Parser	parser.rb	/^class Parser$/;"	c
 Text	lexer.rb	/^class Text$/;"	c
 argument	parser.rb	/^  def argument$/;"	f	class:Parser
 argument_list	parser.rb	/^  def argument_list$/;"	f	class:Parser
+at	parser.rb	/^  def at(cursor = @cursor)$/;"	f	class:Parser
 back!	lexer.rb	/^  def back!$/;"	f	class:Lexer
-content	parser.rb	/^  def content$/;"	f	class:Parser
+content	parser.rb	/^  def content(tag_end_offset)$/;"	f	class:Parser
 end?	lexer.rb	/^  def end?$/;"	f	class:Lexer
 end?	parser.rb	/^  def end?$/;"	f	class:Parser
 end_text_capture	lexer.rb	/^  def end_text_capture$/;"	f	class:Lexer
+identifier	parser.rb	/^  def identifier$/;"	f	class:Parser
 index	lexer.rb	/^  def index(pattern)$/;"	f	class:Lexer
 initialize	lexer.rb	/^  def initialize(text)$/;"	f	class:Lexer
 initialize	lexer.rb	/^  def initialize(text)$/;"	f	class:Text
@@ -24,7 +26,7 @@ initialize	parser.rb	/^  def initialize(token_list)$/;"	f	class:Parser
 next!	lexer.rb	/^  def next!$/;"	f	class:Lexer
 next!	parser.rb	/^  def next!$/;"	f	class:Parser
 node	parser.rb	/^  def node$/;"	f	class:Parser
-nodelist	parser.rb	/^  def nodelist$/;"	f	class:Parser
+nodelist	parser.rb	/^  def nodelist(tag_end_offset)$/;"	f	class:Parser
 parse	parser.rb	/^  def parse$/;"	f	class:Parser
 peek	lexer.rb	/^  def peek$/;"	f	class:Lexer
 peek	parser.rb	/^  def peek$/;"	f	class:Parser
@@ -36,9 +38,9 @@ scan_xml_declaration	lexer.rb	/^  def scan_xml_declaration$/;"	f	class:Lexer
 scan_xml_node	lexer.rb	/^  def scan_xml_node$/;"	f	class:Lexer
 skip_until!	lexer.rb	/^  def skip_until!(pattern, cursor_placement = :after)$/;"	f	class:Lexer
 tag_end	parser.rb	/^  def tag_end$/;"	f	class:Parser
+tag_end_offset	parser.rb	/^  def tag_end_offset$/;"	f	class:Parser
 tag_name	parser.rb	/^  def tag_name$/;"	f	class:Parser
 tag_start	parser.rb	/^  def tag_start$/;"	f	class:Parser
-take!	parser.rb	/^  def take!$/;"	f	class:Parser
 text	parser.rb	/^  def text$/;"	f	class:Parser
 to_s	lexer.rb	/^  def to_s$/;"	f	class:Text
 to_s	parser.rb	/^  def to_s$/;"	f	class:Node

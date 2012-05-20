@@ -12,23 +12,32 @@ require 'ruby-debug'
 # <argument>      ::= <text> '=' <text>
 
 class Node
-  attr_accessor :children
+  attr_accessor :children, :parent, :name
 
   def initialize(hash)
     @name      = hash[:name]
     @arguments = hash[:arguments]
-    if !hash[:text].nil?
-      @children  = [hash[:text]]
-    elsif !hash[:children].nil?
-      @children  = hash[:children].map{|el| Node.new(el)}
-    end
+    @children = hash[:children].flatten if !hash[:children].nil?
   end
 
   def to_s
-    arguments = @arguments.map {|arg|
-      "#{arg[:name]}=\"#{arg[:value]}\""
-    }.join(' ')
-    "<#{@name} #{arguments}>#{@children}</#{@name}>"
+    # text node
+    if @name == "Text"
+      @children.join('')
+    else
+      # node with arguments
+      if !@arguments.nil?
+        arguments = @arguments.map {|arg|
+          "#{arg[:name]}=\"#{arg[:value]}\""
+        }.join(' ')
+        children_str = @children.map{|el| el.to_s}.join('')
+        "<#{@name} #{arguments}>#{children_str}</#{@name}>"
+      # node with no arguments
+      else
+        children_str = @children.map{|el| el.to_s}.join('')
+        "<#{@name}>#{children_str}</#{@name}>"
+      end
+    end
   end
 end
 
@@ -45,14 +54,9 @@ class Parser
     @token_list[@cursor]
   end
 
-  def take!
-    v=peek
-    next!
-    v
-  end
-
   def next!
     @cursor = @cursor + 1
+    self
   end
 
   def end?
@@ -63,32 +67,58 @@ class Parser
     node
   end
 
-  def nodelist
-    if end?
+  def at(cursor = @cursor)
+    @token_list[cursor]
+  end
+
+  ##
+  # Returns ending tag (wrt the tag we're currently in)
+  # lbracket token offset
+  def tag_end_offset
+    depth = 1
+    cursor = @cursor
+    while depth != 0 && cursor < @token_list.size
+      if at(cursor) == :lbracket && at(cursor+1).is_a?(String)
+        depth = depth + 1
+      elsif at(cursor) == :lbracket && at(cursor+1) == :slash
+        depth = depth - 1
+      end
+      cursor = cursor + 1
+    end
+
+    cursor-1
+  end
+
+  def nodelist(tag_end_offset)
+    if @cursor >= tag_end_offset
+      nil
     else
-      first = node
-      rest = nodelist
-      if rest.nil?
-        return first
+      car = node
+      cdr = nodelist(tag_end_offset)
+      # drop last element - it's a nil
+      if cdr.nil?
+        return [car]
       else
-        rest.first(rest.size-1)
-        return [first] << rest
+        return [car] << cdr
       end
     end
   end
 
   def node
     # parse & catch info
-    tag_info    = tag_start
-    tag_content = content
-    tag_end
+    tag_info     = tag_start
+    # compute closing tag offset so we know when to stop parsing tokens for tag content
+    tag_content  = content(tag_end_offset)
+    tag_end_info = tag_end
+    if tag_end_info[:name] != tag_info[:name]
+      raise 'Closing tag not found'
+    end
 
     # return tree
-    if tag_content.is_a?(String)
-      Node.new(tag_info.merge(:text => tag_content))
-    else
-      Node.new(tag_info.merge(:children => tag_content))
-    end
+    t=tag_content
+    node = Node.new(tag_info.merge(:children => t))
+    node.children.map {|el| el.parent = node }
+    node
   end
 
   def tag_start
@@ -119,9 +149,11 @@ class Parser
   end
 
   def tag_name
-    text
+    identifier
   end
 
+  ##
+  # Returns: Array of hashes with :name, :value keys
   def argument_list
     if peek == :rbracket
       nil
@@ -130,9 +162,8 @@ class Parser
       rest = argument_list
       # drop last element
       if rest.nil?  
-        return arg
+        return [arg]
       else
-        rest.first(rest.size-1)
         return [arg] << rest
       end
     end
@@ -155,24 +186,38 @@ class Parser
     end
   end
 
-  def content
-    if end?
+  ##
+  # Returns: array of elements contained in tag
+  def content(tag_end_offset)
+    if @cursor == tag_end_offset
       nil
     elsif peek == :lbracket
-      nodelist
+      nodelist(tag_end_offset)
     else
-      text
+      [text]
     end
   end
 
-  def text
+  ##
+  # Identifiers are just plain text
+  def identifier
     text = peek
     next!
     text
   end
 
+  ##
+  # Used for text nested inside of tags
+  # Returns: Text node with one element array of children containing text string
+  def text
+    text_node = Node.new(:name => "Text", :children => [peek])
+    next!
+    text_node
+  end
+
   # piszemy RD bo najłatwiej
   def parse
+    xml_document
   end
 
 end

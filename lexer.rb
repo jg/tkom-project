@@ -8,6 +8,9 @@ require 'ruby-debug'
 # / SLASH
 # TEXT
 
+##
+# Transforms plain text into an array of tokens
+# strings are represented as standard ruby strings
 class Text
   attr_reader :text
   def initialize(text)
