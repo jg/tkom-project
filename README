@@ -1,0 +1,20 @@
+Wymagania
+---------
+
+  - interpreter języka ruby (można sprawdzić czy takowy jest zainstalowany
+    poleceniem 'ruby -v'
+
+
+Uruchomienie programu 
+---------------------
+
+    ./main.rb PLIK_1 PLIK_2
+
+Testy
+-----
+
+    ./main.rb books.xml test/integration/attribute-missing.xml test/integration/child-missing.xml
+    ./main.rb books.xml test/integration/different-child-count.xml
+    ./main.rb books.xml test/integration/malformed-end-bracket-missing.xml
+    ./main.rb books.xml test/integration/malformed-end-tag-missing.xml test/integration/order_test.xml
+
