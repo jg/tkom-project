@@ -8,24 +8,28 @@ require 'ruby-debug'
 # / SLASH
 # TEXT
 
-##
-# Transforms plain text into an array of tokens
-# strings are represented as standard ruby strings
 class Text
   attr_reader :text
   def initialize(text)
     @text = text
   end
 
-  def ==(str)
-    @text == str
+  def ==(obj)
+    if obj.respond_to?(:text)
+      @text == obj.text
+    else
+      @text == obj
+    end
   end
 
   def to_s
-    "\"#{@text}\""
+    "#{@text}"
   end
 end
 
+##
+# Transforms plain text into an array of tokens
+# strings are represented as standard ruby strings
 class Lexer
   attr_reader :cursor, :text
 

@@ -25,16 +25,12 @@ class Node
   # Arguments are root node and function callback
   # callback is called for each node reachable from root node
   # tree is traversed inorder
-  # def inorder(node, depth)
-  #   yield(node, depth)
-  #   node.children.map do |el|
-  #     inorder(el, depth+1)
-  #   end
-  # end
   def self.inorder(node, callback, depth)
     callback.call(node, depth)
-    node.children.map do |el|
-      inorder(el, callback, depth+1) unless node.name == "Text"
+    unless node.children.nil?
+      node.children.map do |el|
+        inorder(el, callback, depth+1) unless node.name == "Text"
+      end
     end
   end
 
@@ -47,7 +43,7 @@ class Node
 
       # text node
       if node.name == "Text"
-        collection[depth] << ["#{node.name}", node.children.first]
+        collection[depth] << ["#{node.name}", node.children.first.text]
       # node with arguments
       elsif !node.arguments.nil?
         args = node.arguments.map {|h|
@@ -55,7 +51,7 @@ class Node
         }.sort
         collection[depth] << ["#{node.name} #{args.join(' ')}"]
       else
-        collection[depth] << [node.name]
+        collection[depth] << ["#{node.name}"]
       end
     }
 
@@ -63,7 +59,10 @@ class Node
     Node.inorder(node,f,0)
 
     # sort each level of tree
-    collection.map {|level| level.sort }
+    collection.map {|level|
+      # debugger
+      level.sort
+    }
   end
 
 
@@ -77,11 +76,11 @@ class Node
         arguments = @arguments.map {|arg|
           "#{arg[:name]}=\"#{arg[:value]}\""
         }.join(' ')
-        children_str = @children.map{|el| el.to_s}.join('')
+        children_str = @children.nil? ?  '' : @children.map{|el| el.to_s}.join('')
         "<#{@name} #{arguments}>#{children_str}</#{@name}>"
       # node with no arguments
       else
-        children_str = @children.map{|el| el.to_s}.join('')
+        children_str = @children.nil? ? '' : @children.map{|el| el.to_s}.join('')
         "<#{@name}>#{children_str}</#{@name}>"
       end
     end
@@ -99,7 +98,7 @@ class Node
     end
 
     warn "\n"
-    warn 'tree2-tree1:'
+    warn "tree1-tree2"
     0.upto(ns1.length-1) do |level|
       ns1[level].each_with_index do |element, i|
         if ns2[level].find_index(element).nil?
@@ -109,7 +108,7 @@ class Node
       end
     end
     warn '-'*78
-    warn 'tree1-tree2'
+    warn 'tree2-tree1:'
     0.upto(ns1.length-1) do |level|
       ns2[level].each_with_index do |element, i|
         if ns1[level].find_index(element).nil?
@@ -118,18 +117,21 @@ class Node
       end
     end
     warn '-'*78
-    warn 'in tree1 and tree2:'
+    warn "in tree1 and tree2:"
     0.upto(ns1.length-1) do |level|
+      warn "level #{level}: "
       ns2[level].each_with_index do |element, i|
         if !ns1[level].find_index(element).nil?
-          warn "\t #{element} (level: #{level})"
+          warn "\t #{element}"
         end
       end
     end
   end
 
   def ==(other)
-    @name == other.name && Set.new(@arguments) == Set.new(other.arguments)
+    a1 = @arguments.map {|h| "#{h[:name]}=#{h[:value]}" }.sort
+    a2 = other.arguments.map {|h| "#{h[:name]}=#{h[:value]}" }.sort
+    @name == other.name && a1 == a2
   end
 end
 
@@ -166,11 +168,11 @@ class Parser
   ##
   # Returns ending tag (wrt the tag we're currently in)
   # lbracket token offset
-  def tag_end_offset
+  def get_tag_end_offset
     depth = 1
     cursor = @cursor
     while depth != 0 && cursor < @token_list.size
-      if at(cursor) == :lbracket && at(cursor+1).is_a?(String)
+      if at(cursor) == :lbracket && at(cursor+1) != :slash
         depth = depth + 1
       elsif at(cursor) == :lbracket && at(cursor+1) == :slash
         depth = depth - 1
@@ -200,16 +202,18 @@ class Parser
     # parse & catch info
     tag_info     = tag_start
     # compute closing tag offset so we know when to stop parsing tokens for tag content
-    tag_content  = content(tag_end_offset)
+    # debugger
+    offset = get_tag_end_offset
+    tag_content  = content(offset)
     tag_end_info = tag_end
-    if tag_end_info[:name] != tag_info[:name]
+    if tag_end_info[:name].to_s != tag_info[:name].to_s
       raise 'Closing tag not found'
     end
 
     # return tree
     t=tag_content
     node = Node.new(tag_info.merge(:children => t))
-    node.children.map {|el| el.parent = node }
+    node.children.map {|el| el.parent = node } unless node.children.nil?
     node
   end
 
@@ -307,7 +311,6 @@ class Parser
     text_node
   end
 
-  # piszemy RD bo najłatwiej
   def parse
     xml_document
   end

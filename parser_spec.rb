@@ -1,4 +1,5 @@
 require './parser'
+require './lexer'
 
 describe Parser do
   context '#parse' do
@@ -30,6 +31,13 @@ describe Parser do
       t.to_s.should =='<book id="bk101" date="2012-02-02">tag text</book>'
     end
 
+    it "parses empty tag" do
+      token_list = [:lbracket, "catalog", :rbracket, :lbracket, :slash, "catalog", :rbracket]
+      p=Parser.new(token_list)
+      t=p.node
+      t.to_s.should =='<catalog></catalog>'
+    end
+
     it "parses the closing tag" do
       token_list = [:lbracket, :slash, "book", :rbracket]
       p=Parser.new(token_list)
@@ -43,7 +51,7 @@ describe Parser do
                    :lbracket, :slash, "book", :rbracket]
       p=Parser.new(token_list)
       p.next!
-      t=p.tag_end_offset
+      t=p.get_tag_end_offset
       t.should == 21
     end
 
@@ -105,6 +113,38 @@ describe Parser do
       t.to_s.should == str
     end
 
+    it "should return valid tag offset" do
+str = <<-END
+<catalog>
+   <book>
+      <author id="bk101">Gambardella, Matthew</author>
+      <title>XML Developer's Guide</title>
+   </book>
+</catalog>
+END
+      str.gsub!(/\n\s*/,'')
+
+      tokens = Lexer.new(str).tokenize
+      Parser.new(tokens).get_tag_end_offset.should == 34
+    end
+
+
+    it "should parse big xml sample" do
+str = <<-END
+<catalog>
+   <book>
+      <author id="bk101">Gambardella, Matthew</author>
+      <title>XML Developer's Guide</title>
+   </book>
+</catalog>
+END
+      str.gsub!(/\n\s*/,'')
+
+      tokens = Lexer.new(str).tokenize
+      t = Parser.new(tokens).parse
+      t.to_s.should == '<catalog><book><author id="bk101">Gambardella, Matthew</author><title>XML Developer\'s Guide</title></book></catalog>'
+    end
+
     # it "constructs a tree out of nested tags" do
     #   token_list = [
     #       :lbracket, "catalog", :rbracket, 
@@ -121,7 +161,6 @@ describe Parser do
     #       :lbracket, :slash, "catalog", :rbracket]
     #   p=Parser.new(token_list)
     #   t=p.parse
-      # debugger
       # it = t.inorder_iterator(t, 0)
       # it.call Proc.new {|node, depth|
       #   if node.name != nil
@@ -138,35 +177,35 @@ describe Parser do
       # end
     # end
 
-    it "diffs the trees" do
-      token_list1 = [
-          :lbracket, "catalog", :rbracket, 
-            :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
-              :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
-              :lbracket, "title", :rbracket,
-                :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
-              :lbracket, :slash, "title", :rbracket,
-              :lbracket, "genre", :rbracket, "Computer", :lbracket, :slash, "genre", :rbracket,
-              :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
-              :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
-              :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
-            :lbracket, :slash, "book", :rbracket,
-          :lbracket, :slash, "catalog", :rbracket]
-      token_list2 = [
-          :lbracket, "catalog", :rbracket, 
-            :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
-              :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
-              :lbracket, "title", :rbracket,
-                :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
-              :lbracket, :slash, "title", :rbracket,
-              :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
-              :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
-              :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
-            :lbracket, :slash, "book", :rbracket,
-          :lbracket, :slash, "catalog", :rbracket]
-      t1=Parser.new(token_list1).parse
-      t2=Parser.new(token_list2).parse
-      t1.diff(t2)
-    end
+    # it "diffs the trees" do
+    #   token_list1 = [
+    #       :lbracket, "catalog", :rbracket, 
+    #         :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
+    #           :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
+    #           :lbracket, "title", :rbracket,
+    #             :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
+    #           :lbracket, :slash, "title", :rbracket,
+    #           :lbracket, "genre", :rbracket, "Computer", :lbracket, :slash, "genre", :rbracket,
+    #           :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
+    #           :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
+    #           :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
+    #         :lbracket, :slash, "book", :rbracket,
+    #       :lbracket, :slash, "catalog", :rbracket]
+    #   token_list2 = [
+    #       :lbracket, "catalog", :rbracket, 
+    #         :lbracket, "book", "id", :equals, :quote, "bk101", :quote, "date", :equals, :quote, "2012/02/03", :quote, :rbracket,
+    #           :lbracket, "author", :rbracket, "Gambardella, Matthew", :lbracket, :slash, "author", :rbracket,
+    #           :lbracket, "title", :rbracket,
+    #             :lbracket, "nested", :rbracket, "text", :lbracket, :slash, "nested", :rbracket,
+    #           :lbracket, :slash, "title", :rbracket,
+    #           :lbracket, "price", :rbracket, "44.95", :lbracket, :slash, "price", :rbracket,
+    #           :lbracket, "publish_date", :rbracket, "2000-10-01", :lbracket, :slash, "publish_date", :rbracket,
+    #           :lbracket, "description", :rbracket, "An in-depth look at creating applications with XML.", :lbracket, :slash, "description", :rbracket,
+    #         :lbracket, :slash, "book", :rbracket,
+    #       :lbracket, :slash, "catalog", :rbracket]
+    #   t1=Parser.new(token_list1).parse
+    #   t2=Parser.new(token_list2).parse
+    #   t1.diff(t2)
+    # end
   end
 end
